@@ -1,0 +1,91 @@
+/*
+ * Copyright 2018 Gökhan Kanber
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion rootProject.ext.compileSdkVersion
+    buildToolsVersion rootProject.ext.buildToolsVersion
+
+    sourceSets {
+        main {
+            assets.srcDirs = ['assets']
+            jniLibs.srcDirs = ['libs']
+        }
+    }
+
+    defaultConfig {
+        applicationId "${rootProject.ext.companyDomain}.pong"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 1
+        versionName "1.0"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+configurations {
+    natives
+}
+
+dependencies {
+    compile "com.android.support:support-fragment:${rootProject.ext.supportLibVersion}"
+    compile "com.badlogicgames.gdx:gdx:${rootProject.ext.gdxVersion}"
+    compile "com.badlogicgames.gdx:gdx-backend-android:${rootProject.ext.gdxVersion}"
+    natives "com.badlogicgames.gdx:gdx-platform:${rootProject.ext.gdxVersion}:natives-armeabi"
+    natives "com.badlogicgames.gdx:gdx-platform:${rootProject.ext.gdxVersion}:natives-armeabi-v7a"
+    natives "com.badlogicgames.gdx:gdx-platform:${rootProject.ext.gdxVersion}:natives-arm64-v8a"
+    natives "com.badlogicgames.gdx:gdx-platform:${rootProject.ext.gdxVersion}:natives-x86"
+    natives "com.badlogicgames.gdx:gdx-platform:${rootProject.ext.gdxVersion}:natives-x86_64"
+
+    // for using font.
+    compile "com.badlogicgames.gdx:gdx-freetype:${rootProject.ext.gdxVersion}"
+    natives "com.badlogicgames.gdx:gdx-freetype-platform:${rootProject.ext.gdxVersion}:natives-armeabi"
+    natives "com.badlogicgames.gdx:gdx-freetype-platform:${rootProject.ext.gdxVersion}:natives-armeabi-v7a"
+    natives "com.badlogicgames.gdx:gdx-freetype-platform:${rootProject.ext.gdxVersion}:natives-arm64-v8a"
+    natives "com.badlogicgames.gdx:gdx-freetype-platform:${rootProject.ext.gdxVersion}:natives-x86"
+    natives "com.badlogicgames.gdx:gdx-freetype-platform:${rootProject.ext.gdxVersion}:natives-x86_64"
+}
+
+task copyAndroidNatives() {
+    file("libs/armeabi/").mkdirs();
+    file("libs/armeabi-v7a/").mkdirs();
+    file("libs/arm64-v8a/").mkdirs();
+    file("libs/x86/").mkdirs();
+    file("libs/x86_64/").mkdirs();
+
+    configurations.natives.files.each { jar ->
+        def outputDir = null
+        if(jar.name.endsWith("natives-armeabi.jar")) outputDir = file("libs/armeabi")
+        if(jar.name.endsWith("natives-armeabi-v7a.jar")) outputDir = file("libs/armeabi-v7a")
+        if(jar.name.endsWith("natives-arm64-v8a.jar")) outputDir = file("libs/arm64-v8a")
+        if(jar.name.endsWith("natives-x86.jar")) outputDir = file("libs/x86")
+        if(jar.name.endsWith("natives-x86_64.jar")) outputDir = file("libs/x86_64")
+        if(outputDir != null) {
+            copy {
+                from zipTree(jar)
+                into outputDir
+                include "*.so"
+            }
+        }
+    }
+}
